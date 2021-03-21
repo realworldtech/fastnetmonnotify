@@ -71,12 +71,10 @@ class SlackAction:
         ]
         for field in self.details["attack_details"]:
             attack_summary_fields.append({"type": "plain_text", "text": field})
-            attack_summary_fields.append(
-                {
-                    "type": "plain_text",
-                    "text": str(self.details["attack_details"][field]),
-                },
-            )
+            value = str(self.details["attack_details"][field])
+            if value == "":
+                value = "<not set>"
+            attack_summary_fields.append({"type": "plain_text", "text": value},)
         return attack_summary_fields
 
     def _build_flowspec_details_table(self, rule):
@@ -88,6 +86,8 @@ class SlackAction:
             value = rule[field]
             if isinstance(value, list):
                 value = ", ".join(str(x) for x in value)
+            if value == "":
+                value = "<not set>"
             flowspec_details.append({"type": "plain_text", "text": field})
             flowspec_details.append({"type": "plain_text", "text": str(value)})
         return flowspec_details
