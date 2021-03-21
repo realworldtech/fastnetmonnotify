@@ -8,6 +8,9 @@ from fastnetmon_notify import redis
 from slack import SlackAction
 import time
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     while True:
@@ -15,11 +18,11 @@ if __name__ == "__main__":
             ["slack_attack_action", "slack_update_blackhole"]
         )
         message = json.loads(message.decode("utf-8"))
-        if queue == "slack_attack_action":
+        if queue == b"slack_attack_action":
             sa = SlackAction(attack_details=message, redis=redis)
             sa.process_message()
             sa = None
-        elif queue == "slack_update_blackhole":
+        elif queue == b"slack_update_blackhole":
             sa = SlackAction(update_message=message, redis=redis)
             sa.update_message()
             sa = None
