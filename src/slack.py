@@ -234,10 +234,11 @@ class SlackAction:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Ban removed* at {datetime}".format(
+                        "text": "*Ban removed* for {ip_address} at {datetime}".format(
+                            ip_address=self.details["ip"],
                             datetime=tz.localize(datetime.now()).strftime(
                                 "%a %b %d %H:%M:%S %Z %Y"
-                            )
+                            ),
                         ),
                     },
                 }
