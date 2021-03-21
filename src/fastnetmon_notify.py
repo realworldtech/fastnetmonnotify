@@ -87,6 +87,16 @@ def slack_incoming():
                         url + "/blackhole/{uuid}".format(uuid=attack_uuid), auth=auth
                     )
                     if not response.ok:
+                        try:
+                            payload = response.json()
+                            if (
+                                payload["error_text"]
+                                == "Could not disable mitigation: rpc error: code = InvalidArgument desc = We haven't any mitigations with this uuid"
+                            ):
+                                message = json.dumps(slack_req)
+                                app.redis.rpush("slack_update_blackhole", message)
+                        except Exception:
+                            pass
                         return make_response("invalid request", 403)
                     message = json.dumps(slack_req)
                     app.redis.rpush("slack_update_blackhole", message)
