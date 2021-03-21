@@ -32,9 +32,12 @@ class SlackAction:
         attack_details=None,
         thread_ts=None,
         fallback_message=None,
+        actions=None,
     ):
         attachments = []
         blocks = message
+        if actions:
+            blocks = blocks + actions
         if attack_details is not None:
             attachments.append(attack_details)
         if mitigation_rules is not None:
@@ -211,12 +214,30 @@ class SlackAction:
                 "fallback": "Packets in the capture",
             }
 
+            actions = [
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Remove block :lock:",
+                                "emoji": True,
+                            },
+                            "value": self.details["attack_details"]["attack_uuid"],
+                        },
+                    ],
+                }
+            ]
+
             message = self._get_message_payload(
                 message=attack_summary_block,
                 attack_details=attack_data,
                 packet_details=packet_details,
                 mitigation_rules=flowspec_attachments,
                 fallback_message=attack_description,
+                actions=actions,
             )
             message_thread = self._notify(message)
             self.redis.set(
@@ -236,7 +257,7 @@ class SlackAction:
                         "type": "mrkdwn",
                         "text": "*Ban removed* for {ip_address} at {datetime}".format(
                             ip_address=self.details["ip"],
-                            datetime=tz.localize(datetime.now()).strftime(
+                            datetime=tz.localize(datetime.utcnow()).strftime(
                                 "%a %b %d %H:%M:%S %Z %Y"
                             ),
                         ),
