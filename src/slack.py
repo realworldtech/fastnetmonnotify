@@ -162,8 +162,9 @@ class SlackAction:
             try:
                 # logger.warning(json.dumps(message, indent=4))
                 response = self.client.chat_update(
-                    channel=self.details["channel"],
+                    channel=self.details["channel"]["id"],
                     ts=self.details["message"]["ts"],
+                    text="Ban has been removed",
                     blocks=new_blocks,
                 )
                 assert response["message"]
