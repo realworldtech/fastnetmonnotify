@@ -250,6 +250,9 @@ class SlackAction:
             if message_thread is not None:
                 message_thread = message_thread.decode("utf-8")
             tz = timezone(os.getenv("TIMEZONE", "Australia/Sydney"))
+            action_time = (
+                datetime.utcnow().replace(tzinfo=timezone("utc")).astimezone(tz=tz)
+            )
             action_description = [
                 {
                     "type": "section",
@@ -257,9 +260,7 @@ class SlackAction:
                         "type": "mrkdwn",
                         "text": "*Ban removed* for {ip_address} at {datetime}".format(
                             ip_address=self.details["ip"],
-                            datetime=tz.localize(datetime.utcnow()).strftime(
-                                "%a %b %d %H:%M:%S %Z %Y"
-                            ),
+                            datetime=action_time.strftime("%a %b %d %H:%M:%S %Z %Y"),
                         ),
                     },
                 }
