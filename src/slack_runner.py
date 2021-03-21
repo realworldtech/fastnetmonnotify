@@ -11,8 +11,16 @@ import json
 
 if __name__ == "__main__":
     while True:
-        (queue, attack) = redis.blpop("slack_attack_action")
-        attack_details = json.loads(attack.decode("utf-8"))
-        sa = SlackAction(attack_details=attack_details, redis=redis)
-        sa.process_message()
+        (queue, message) = redis.blpop(
+            ["slack_attack_action", "slack_update_blackhole"]
+        )
+        message = json.loads(message.decode("utf-8"))
+        if queue == "slack_attack_action":
+            sa = SlackAction(attack_details=message, redis=redis)
+            sa.process_message()
+            sa = None
+        elif queue == "slack_update_blackhole":
+            sa = SlackAction(update_message=message, redis=redis)
+            sa.update_message()
+            sa = None
         time.sleep(1)

@@ -15,12 +15,18 @@ class SlackAction:
     details = None
     redis = None
     logger = None
+    type = None
 
-    def __init__(self, attack_details=None, redis=None):
+    def __init__(self, attack_details=None, update_message=None, redis=None):
         self.client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
         self.channel = os.environ["SLACK_BOT_CHANNEL"]
         self.name = os.getenv("SLACK_BOT_NAME", "FastNetMon")
-        self.details = attack_details["details"]
+        if attack_details:
+            self.details = attack_details["details"]
+            self.type = "attack"
+        elif update_message:
+            self.details = update_message
+            self.type = "update"
         self.redis = redis
         self.logger = logging.getLogger(__name__)
 
@@ -141,6 +147,37 @@ class SlackAction:
         return flowspec_details
 
     def process_message(self):
+        if self.type == "attack":
+            self.process_attack_message()
+        elif self.type == "update":
+            self.process_update_message()
+
+    def process_update_message(self):
+        if "message" in self.details:
+            blocks = self.details["message"]["blocks"]
+            new_blocks = []
+            for block in blocks:
+                if block["type"] != "actions":
+                    new_blocks.append(block)
+            try:
+                # logger.warning(json.dumps(message, indent=4))
+                response = self.client.chat_update(
+                    channel=self.details["message"]["channel"],
+                    ts=self.details["message"]["ts"],
+                    blocks=new_blocks,
+                )
+                assert response["message"]
+                return response["ts"]
+            except SlackApiError as e:
+                # You will get a SlackApiError if "ok" is False
+                assert e.response["ok"] is False
+                assert e.response[
+                    "error"
+                ]  # str like 'invalid_auth', 'channel_not_found'
+                self.logger.warning(f"Got an error: {e.response['error']}")
+                self.logger.warning(json.dumps(self.details, indent=4))
+
+    def process_attack_message(self):
         if self.details["action"] == "ban" or self.details["action"] == "partial_block":
             attack_description = (
                 "*RTBH IP {ip_address}*: {attack_protocol} "

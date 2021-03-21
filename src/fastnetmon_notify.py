@@ -88,8 +88,11 @@ def slack_incoming():
                     )
                     if not response.ok:
                         return make_response("invalid request", 403)
+                    message = json.dumps(slack_req)
+                    app.redis.rpush("slack_update_blackhole", message)
                 except Exception:
                     pass
+
     return ""
 
 
