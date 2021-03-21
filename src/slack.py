@@ -162,7 +162,7 @@ class SlackAction:
             try:
                 # logger.warning(json.dumps(message, indent=4))
                 response = self.client.chat_update(
-                    channel=self.details["message"]["channel"],
+                    channel=self.details["channel"],
                     ts=self.details["message"]["ts"],
                     blocks=new_blocks,
                 )
