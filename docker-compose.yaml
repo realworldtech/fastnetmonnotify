@@ -1,0 +1,21 @@
+version: "3.0"
+services:
+  notify:
+    build: .
+    env_file:
+      - .env
+    links:
+      - redis:redis
+    ports:
+      - 8090:8090
+    restart: always
+  runner:
+    build: .
+    env_file:
+      - .env
+    entrypoint: "python /src/slack_runner.py"
+    links:
+      - redis:redis
+    restart: always
+  redis:
+    image: redis:6-alpine

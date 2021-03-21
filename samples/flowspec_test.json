@@ -1,0 +1,66 @@
+{
+  "ip": "127.0.0.1",
+  "action": "partial_block",
+  "attack_details": {
+    "attack_uuid": "ac6f8000-1b17-43b8-9324-f8f7527bd948",
+    "attack_severity": "middle",
+    "attack_type": "unknown",
+    "initial_attack_power": 266676,
+    "peak_attack_power": 266676,
+    "attack_direction": "incoming",
+    "attack_protocol": "tcp",
+    "attack_detection_source": "automatic",
+    "total_incoming_traffic": 14400545,
+    "total_outgoing_traffic": 14400485,
+    "total_incoming_pps": 266676,
+    "total_outgoing_pps": 266675,
+    "total_incoming_flows": 0,
+    "total_outgoing_flows": 0,
+    "average_incoming_traffic": 14400545,
+    "average_outgoing_traffic": 14400485,
+    "average_incoming_pps": 266676,
+    "average_outgoing_pps": 266675,
+    "average_incoming_flows": 0,
+    "average_outgoing_flows": 0,
+    "incoming_ip_fragmented_traffic": 0,
+    "outgoing_ip_fragmented_traffic": 0,
+    "incoming_ip_fragmented_pps": 0,
+    "outgoing_ip_fragmented_pps": 0,
+    "incoming_tcp_traffic": 14400477,
+    "outgoing_tcp_traffic": 14400485,
+    "incoming_tcp_pps": 266675,
+    "outgoing_tcp_pps": 266675,
+    "incoming_syn_tcp_traffic": 0,
+    "outgoing_syn_tcp_traffic": 0,
+    "incoming_syn_tcp_pps": 0,
+    "outgoing_syn_tcp_pps": 0,
+    "incoming_udp_traffic": 0,
+    "outgoing_udp_traffic": 0,
+    "incoming_udp_pps": 0,
+    "outgoing_udp_pps": 0,
+    "incoming_icmp_traffic": 0,
+    "outgoing_icmp_traffic": 0,
+    "incoming_icmp_pps": 0,
+    "outgoing_icmp_pps": 0
+  },
+  "flow_spec_rules": [
+    {
+      "source_prefix": "127.11.0.3/32",
+      "destination_prefix": "127.0.0.1/32",
+      "destination_ports": [
+        0
+      ],
+      "packet_lengths": [
+        40
+      ],
+      "protocols": [
+        "tcp"
+      ],
+      "tcp_flags": [
+        "ack"
+      ],
+      "action_type": "discard",
+      "action": {}
+    }
+  ]
+}
