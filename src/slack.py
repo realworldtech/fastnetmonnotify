@@ -5,6 +5,7 @@ from pytz import timezone
 import os
 import sys
 import logging
+import json
 
 
 class SlackAction:
@@ -61,7 +62,7 @@ class SlackAction:
             assert e.response["ok"] is False
             assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
             self.logger.warning(f"Got an error: {e.response['error']}")
-            sys.exit(1)
+            self.logger.warning(json.dumps(message, indent=4))
 
     def _build_attack_details_table(self):
         attack_summary_fields = [
@@ -224,7 +225,9 @@ class SlackAction:
 
         elif self.details["action"] == "unban":
             ban_id = self.details["attack_details"]["attack_uuid"]
-            message_thread = self.redis.get(ban_id).decode("utf-8")
+            message_thread = self.redis.get(ban_id)
+            if message_thread is not None:
+                message_thread = message_thread.decode("utf-8")
             tz = timezone(os.getenv("TIMEZONE", "Australia/Sydney"))
             action_description = [
                 {
