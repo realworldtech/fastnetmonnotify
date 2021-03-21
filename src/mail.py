@@ -1,5 +1,11 @@
 import os
 
+"""
+This is the start of a mail notification endpoint
+
+It's very not implemented yet
+"""
+
 
 class MailSender:
     LOG_FILE = os.getenv("LOG_FILE", "/var/log/fastnetmon-notify.log")

@@ -44,7 +44,11 @@ locally and limiting your API access via iptables you will need to ensure your D
 service can reach your API server.
 
 Slack allows approx 3 seconds for the server to respond to the API, so if it times out
-you will just see a warning icon. 
+you will just see a warning icon.
+
+Note: this only really works for RTBH blackholes at present. Because the FNM API
+doesn't seem to include the flowspec rules in the resposne, you can't remove these.
+Also, flowspec rule removal doesn't seem to generate a notify event.
 
 ## Enabling in FastNetMon
 

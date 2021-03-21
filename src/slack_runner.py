@@ -1,5 +1,9 @@
 #!/usb/bin/python
 
+# really basic runner that stops messages being posted
+# more than once per second as per rate limits
+# Really, this hsould live in Celery or something better
+
 from fastnetmon_notify import redis
 from slack import SlackAction
 import time

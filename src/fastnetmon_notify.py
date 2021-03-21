@@ -60,6 +60,8 @@ def receive_message():
 
 @app.route("/slack_interaction", methods=["POST"])
 def slack_incoming():
+    # @todo move the bulk of this code into the slack_runner to allow the
+    # removes to run asychronously to the main thread
     if signature_verifier is None:
         return "Not implemented"
     if not signature_verifier.is_valid_request(request.get_data(), request.headers):
