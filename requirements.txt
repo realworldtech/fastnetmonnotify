@@ -13,5 +13,5 @@ requests==2.25.1
 slack-sdk==3.4.2
 urllib3==1.26.4
 Werkzeug==1.0.1
-flask_httpauth
+flask_httpauth==4.2.0
 humanfriendly==9.1
