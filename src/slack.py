@@ -118,7 +118,10 @@ class SlackAction:
         fields = self._build_attack_details_table()
         return {
             "blocks": [
-                {"type": "section", "text": "**Attack Summary Deatils**"},
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Attack Summary Details*"},
+                },
                 {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
             ],
             "fallback": "Summary of attack volumetric data",
@@ -128,7 +131,10 @@ class SlackAction:
         fields = self._build_flowspec_details_table(rule)
         return {
             "blocks": [
-                {"type": "section", "text": "**Flowspec Rules**"},
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Flowspec Rules*"},
+                },
                 {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
             ],
             "fallback": "Summary of attack volumetric data",
