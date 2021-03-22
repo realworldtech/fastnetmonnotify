@@ -231,8 +231,8 @@ class SlackAction:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "Violation reason is {attack_detection_threshold} in {direction} direction".format(
-                            attack_type=self.details["attack_details"]["attack_type"],
+                        "text": "Violation reason is {violation} in {direction} direction".format(
+                            violation=self.details["attack_details"]["attack_type"],
                             direction=self.details["attack_details"][
                                 "attack_direction"
                             ],
