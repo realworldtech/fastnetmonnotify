@@ -90,12 +90,11 @@ class SlackAction:
         dataset = self.details["attack_details"]
         attack_summary_fields = []
         sorted_fields = {k: dataset[k] for k in sorted(dataset)}
-        for field in sorted_fields:
+        for field, raw_value in sorted_fields:
             if "traffic" in field:
-                raw_value = self.details["attack_details"][field]
                 value = humanfriendly.format_size(raw_value, binary=True)
             else:
-                value = str(self.details["attack_details"][field])
+                value = str(raw_value)
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append(
@@ -229,6 +228,7 @@ class SlackAction:
                     "type": "section",
                     "text": {"type": "mrkdwn", "text": attack_description},
                 },
+                {"type": "divider"},
                 {
                     "type": "section",
                     "text": {
@@ -241,7 +241,6 @@ class SlackAction:
                         ),
                     },
                 },
-                {"type": "divider"},
             ]
 
             attack_data = self._get_attack_details()
