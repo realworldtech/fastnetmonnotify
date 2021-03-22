@@ -131,16 +131,13 @@ class SlackAction:
 
     def _get_flowspec_blocks(self, rule):
         fields = self._build_flowspec_details_table(rule)
-        return {
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {"type": "mrkdwn", "text": "*Flowspec Rules*"},
-                },
-                {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
-            ],
-            "fallback": "Summary of attack volumetric data",
-        }
+        return [
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Flowspec Rules*"},
+            },
+            {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
+        ]
 
     def process_message(self):
         if self.type == "attack":
@@ -235,7 +232,9 @@ class SlackAction:
                     "text": {
                         "type": "mrkdwn",
                         "text": "Violation reason is {violation} in {direction} direction".format(
-                            violation=self.details["attack_details"]["attack_type"],
+                            violation=self.details["attack_details"][
+                                "attack_detection_threshold"
+                            ],
                             direction=self.details["attack_details"][
                                 "attack_direction"
                             ],
