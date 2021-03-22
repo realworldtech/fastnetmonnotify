@@ -97,7 +97,7 @@ class SlackAction:
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append(
-                "**{field}:** {value}".format(field=field, value=value)
+                "_{field}:_ {value}".format(field=field, value=value)
             )
         return "\n".join(attack_summary_fields)
 
@@ -110,7 +110,7 @@ class SlackAction:
             if value == "":
                 value = "<not set>"
             flowspec_details.append(
-                "**{field}:** {value}".format(field=field, value=value)
+                "_{field}:_ {value}".format(field=field, value=value)
             )
         return "\n".join(flowspec_details)
 
