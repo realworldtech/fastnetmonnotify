@@ -88,7 +88,7 @@ class SlackAction:
 
     def _build_attack_details_table(self):
         attack_summary_fields = []
-        for field in self.details["attack_details"]:
+        for field in sorted(self.details["attack_details"].items()):
             if "traffic" in field:
                 raw_value = self.details["attack_details"][field]
                 value = humanfriendly.format_size(raw_value, binary=True)
