@@ -126,7 +126,7 @@ def ddos_blackholes():
         return_value = "The following blackhole entries are present:\n"
         for value in values:
             return_value = return_value + " - {ip} ({uuid})\n".format(**value)
-        return jsonify({"text": return_value, "reply_broadcast": True})
+        return jsonify({"text": return_value, "response_type": "in_channel"})
 
 
 @app.route("/ddos_flowspec", methods=["POST"])
@@ -151,8 +151,7 @@ def ddos_flowspec():
             + json.dumps(values, indent=4)
             + "```"
         )
-        return jsonify({"text": return_value, "reply_broadcast": True})
-    return ""
+        return jsonify({"text": return_value, "response_type": "in_channel"})
 
 
 if __name__ == "__main__":
