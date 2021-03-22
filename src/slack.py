@@ -6,6 +6,8 @@ import os
 import sys
 import logging
 import json
+import time
+import humanfriendly
 
 
 class SlackAction:
@@ -63,9 +65,20 @@ class SlackAction:
     def _notify(self, message):
         try:
             # logger.warning(json.dumps(message, indent=4))
+            attachments = message["attachments"]
+            del message["attachments"]
             response = self.client.chat_postMessage(**message)
             assert response["message"]
-            return response["ts"]
+            message_thread_id = response["ts"]
+            time.sleep(1)
+            del message["blocks"]
+            for attachment in attachments:
+                message["attachments"] = [attachment]
+                message["thread_ts"] = message_thread_id
+                response = self.client.chat_postMessage(**message)
+                assert response["message"]
+                time.sleep(1)
+            return message_thread_id
         except SlackApiError as e:
             # You will get a SlackApiError if "ok" is False
             assert e.response["ok"] is False
@@ -80,7 +93,11 @@ class SlackAction:
         ]
         for field in self.details["attack_details"]:
             attack_summary_fields.append({"type": "plain_text", "text": field})
-            value = str(self.details["attack_details"][field])
+            if "traffic" in field:
+                raw_value = self.details["attack_details"][field]
+                value = humanfriendly.format_size(raw_value, binary=True)
+            else:
+                value = str(self.details["attack_details"][field])
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append({"type": "plain_text", "text": value},)

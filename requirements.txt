@@ -14,3 +14,4 @@ slack-sdk==3.4.2
 urllib3==1.26.4
 Werkzeug==1.0.1
 flask_httpauth
+humanfriendly==9.1

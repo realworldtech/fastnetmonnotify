@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 import json
 import redis
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 from slack_sdk.signature import SignatureVerifier
@@ -103,6 +103,55 @@ def slack_incoming():
                 except Exception:
                     pass
 
+    return ""
+
+
+@app.route("/ddos_blackholes", methods=["POST"])
+def ddos_blackholes():
+    # @todo move the bulk of this code into the slack_runner to allow the
+    # removes to run asychronously to the main thread
+    if signature_verifier is None:
+        return "Not implemented"
+    if not signature_verifier.is_valid_request(request.get_data(), request.headers):
+        return make_response("invalid request", 403)
+    auth = (
+        os.environ["FNM_API_USERNAME"],
+        os.environ["FNM_API_PASSWORD"],
+    )
+    url = os.environ["FNM_API_URL"]
+    response = requests.get(url + "/blackhole/", auth=auth)
+    if response.ok:
+        payload = response.json()
+        values = payload["values"]
+        return_value = "The following blackhole entries are present:\n"
+        for value in values:
+            return_value = return_value + " - {ip} ({uuid})\n".format(**value)
+        return jsonify({"text": return_value, "reply_broadcast": True})
+
+
+@app.route("/ddos_flowspec", methods=["POST"])
+def ddos_flowspec():
+    # @todo move the bulk of this code into the slack_runner to allow the
+    # removes to run asychronously to the main thread
+    if signature_verifier is None:
+        return "Not implemented"
+    if not signature_verifier.is_valid_request(request.get_data(), request.headers):
+        return make_response("invalid request", 403)
+    auth = (
+        os.environ["FNM_API_USERNAME"],
+        os.environ["FNM_API_PASSWORD"],
+    )
+    url = os.environ["FNM_API_URL"]
+    response = requests.get(url + "/flowspec/", auth=auth)
+    if response.ok:
+        payload = response.json()
+        values = payload["values"]
+        return_value = (
+            "The following flowspec entries are present:\n```"
+            + json.dumps(values, indent=4)
+            + "```"
+        )
+        return jsonify({"text": return_value, "reply_broadcast": True})
     return ""
 
 
