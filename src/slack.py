@@ -87,12 +87,8 @@ class SlackAction:
             self.logger.warning(json.dumps(message, indent=4))
 
     def _build_attack_details_table(self):
-        attack_summary_fields = [
-            {"type": "mrkdwn", "text": "*Key*"},
-            {"type": "mrkdwn", "text": "*Value*"},
-        ]
+        attack_summary_fields = []
         for field in self.details["attack_details"]:
-            attack_summary_fields.append({"type": "plain_text", "text": field})
             if "traffic" in field:
                 raw_value = self.details["attack_details"][field]
                 value = humanfriendly.format_size(raw_value, binary=True)
@@ -100,68 +96,43 @@ class SlackAction:
                 value = str(self.details["attack_details"][field])
             if value == "":
                 value = "<not set>"
-            attack_summary_fields.append({"type": "plain_text", "text": value},)
-        return attack_summary_fields
+            attack_summary_fields.append(
+                "*{field}:* {value}".format(field=field, value=value)
+            )
+        return "\n".join(attack_summary_fields)
 
     def _build_flowspec_details_table(self, rule):
-        flowspec_details = [
-            {"type": "mrkdwn", "text": "*Key*"},
-            {"type": "mrkdwn", "text": "*Value*"},
-        ]
+        flowspec_details = []
         for field in rule:
             value = rule[field]
             if isinstance(value, list):
                 value = ", ".join(str(x) for x in value)
             if value == "":
                 value = "<not set>"
-            flowspec_details.append({"type": "plain_text", "text": field})
-            flowspec_details.append({"type": "plain_text", "text": str(value)})
-        return flowspec_details
+            flowspec_details.append(
+                "*{field}:* {value}".format(field=field, value=value)
+            )
+        return "\n".join(flowspec_details)
 
     def _get_attack_details(self):
-        attack_details = []
         fields = self._build_attack_details_table()
-        headers = fields[0:2]
-        fields = fields[2:]
-        field_blocks = []
-        field_count = 0
-        cur_block = headers
-        for field in fields:
-            field_count = field_count + 1
-            cur_block.append(field)
-            if field_count == 8:
-                field_blocks.append(cur_block)
-                cur_block = []
-                field_count = 0
-        if len(cur_block) > 2:
-            field_blocks.append(cur_block)
-        for field_block in field_blocks:
-            attack_details.append({"type": "section", "fields": field_block})
         return {
-            "blocks": attack_details,
+            "blocks": [
+                {"type": "section", "text": "**Attack Summary Deatils**"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
+            ],
             "fallback": "Summary of attack volumetric data",
         }
 
     def _get_flowspec_blocks(self, rule):
-        flowspec_details = []
         fields = self._build_flowspec_details_table(rule)
-        headers = fields[0:2]
-        fields = fields[2:]
-        field_blocks = []
-        field_count = 0
-        cur_block = headers
-        for field in fields:
-            field_count = field_count + 1
-            cur_block.append(field)
-            if field_count == 8:
-                field_blocks.append(cur_block)
-                cur_block = []
-                field_count = 0
-        if len(cur_block) > 2:
-            field_blocks.append(cur_block)
-        for field_block in field_blocks:
-            flowspec_details.append({"type": "section", "fields": field_block})
-        return flowspec_details
+        return {
+            "blocks": [
+                {"type": "section", "text": "**Flowspec Rules**"},
+                {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
+            ],
+            "fallback": "Summary of attack volumetric data",
+        }
 
     def process_message(self):
         if self.type == "attack":
