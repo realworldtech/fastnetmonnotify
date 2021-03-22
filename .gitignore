@@ -164,3 +164,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+# local excludes
+samples/local

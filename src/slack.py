@@ -6,6 +6,8 @@ import os
 import sys
 import logging
 import json
+import time
+import humanfriendly
 
 
 class SlackAction:
@@ -15,12 +17,18 @@ class SlackAction:
     details = None
     redis = None
     logger = None
+    type = None
 
-    def __init__(self, attack_details=None, redis=None):
+    def __init__(self, attack_details=None, update_message=None, redis=None):
         self.client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
         self.channel = os.environ["SLACK_BOT_CHANNEL"]
         self.name = os.getenv("SLACK_BOT_NAME", "FastNetMon")
-        self.details = attack_details["details"]
+        if attack_details:
+            self.details = attack_details["details"]
+            self.type = "attack"
+        elif update_message:
+            self.details = update_message
+            self.type = "update"
         self.redis = redis
         self.logger = logging.getLogger(__name__)
 
@@ -32,9 +40,12 @@ class SlackAction:
         attack_details=None,
         thread_ts=None,
         fallback_message=None,
+        actions=None,
     ):
         attachments = []
         blocks = message
+        if actions:
+            blocks = blocks + actions
         if attack_details is not None:
             attachments.append(attack_details)
         if mitigation_rules is not None:
@@ -54,9 +65,20 @@ class SlackAction:
     def _notify(self, message):
         try:
             # logger.warning(json.dumps(message, indent=4))
+            attachments = message["attachments"]
+            del message["attachments"]
             response = self.client.chat_postMessage(**message)
             assert response["message"]
-            return response["ts"]
+            message_thread_id = response["ts"]
+            time.sleep(1)
+            del message["blocks"]
+            for attachment in attachments:
+                message["attachments"] = [attachment]
+                message["thread_ts"] = message_thread_id
+                response = self.client.chat_postMessage(**message)
+                assert response["message"]
+                time.sleep(1)
+            return message_thread_id
         except SlackApiError as e:
             # You will get a SlackApiError if "ok" is False
             assert e.response["ok"] is False
@@ -65,79 +87,91 @@ class SlackAction:
             self.logger.warning(json.dumps(message, indent=4))
 
     def _build_attack_details_table(self):
-        attack_summary_fields = [
-            {"type": "mrkdwn", "text": "*Key*"},
-            {"type": "mrkdwn", "text": "*Value*"},
-        ]
-        for field in self.details["attack_details"]:
-            attack_summary_fields.append({"type": "plain_text", "text": field})
-            value = str(self.details["attack_details"][field])
+        dataset = self.details["attack_details"]
+        dataset = dict(sorted(dataset.items()))
+        attack_summary_fields = []
+        for field in dataset:
+            if "traffic" in field:
+                raw_value = self.details["attack_details"][field]
+                value = humanfriendly.format_size(raw_value, binary=True)
+            else:
+                value = str(self.details["attack_details"][field])
             if value == "":
                 value = "<not set>"
-            attack_summary_fields.append({"type": "plain_text", "text": value},)
-        return attack_summary_fields
+            attack_summary_fields.append(
+                "_{field}:_ {value}".format(field=field, value=value)
+            )
+        return "\n".join(attack_summary_fields)
 
     def _build_flowspec_details_table(self, rule):
-        flowspec_details = [
-            {"type": "mrkdwn", "text": "*Key*"},
-            {"type": "mrkdwn", "text": "*Value*"},
-        ]
+        flowspec_details = []
         for field in rule:
             value = rule[field]
             if isinstance(value, list):
                 value = ", ".join(str(x) for x in value)
             if value == "":
                 value = "<not set>"
-            flowspec_details.append({"type": "plain_text", "text": field})
-            flowspec_details.append({"type": "plain_text", "text": str(value)})
-        return flowspec_details
+            flowspec_details.append(
+                "_{field}:_ {value}".format(field=field, value=value)
+            )
+        return "\n".join(flowspec_details)
 
     def _get_attack_details(self):
-        attack_details = []
         fields = self._build_attack_details_table()
-        headers = fields[0:2]
-        fields = fields[2:]
-        field_blocks = []
-        field_count = 0
-        cur_block = headers
-        for field in fields:
-            field_count = field_count + 1
-            cur_block.append(field)
-            if field_count == 8:
-                field_blocks.append(cur_block)
-                cur_block = []
-                field_count = 0
-        if len(cur_block) > 2:
-            field_blocks.append(cur_block)
-        for field_block in field_blocks:
-            attack_details.append({"type": "section", "fields": field_block})
         return {
-            "blocks": attack_details,
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "*Attack Summary Details*"},
+                },
+                {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
+            ],
             "fallback": "Summary of attack volumetric data",
         }
 
     def _get_flowspec_blocks(self, rule):
-        flowspec_details = []
         fields = self._build_flowspec_details_table(rule)
-        headers = fields[0:2]
-        fields = fields[2:]
-        field_blocks = []
-        field_count = 0
-        cur_block = headers
-        for field in fields:
-            field_count = field_count + 1
-            cur_block.append(field)
-            if field_count == 8:
-                field_blocks.append(cur_block)
-                cur_block = []
-                field_count = 0
-        if len(cur_block) > 2:
-            field_blocks.append(cur_block)
-        for field_block in field_blocks:
-            flowspec_details.append({"type": "section", "fields": field_block})
-        return flowspec_details
+        return [
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Flowspec Rules*"},
+            },
+            {"type": "section", "text": {"type": "mrkdwn", "text": fields}},
+        ]
 
     def process_message(self):
+        if self.type == "attack":
+            self.process_attack_message()
+        elif self.type == "update":
+            self.process_update_message()
+
+    def process_update_message(self):
+        if "message" in self.details:
+            blocks = self.details["message"]["blocks"]
+            new_blocks = []
+            for block in blocks:
+                if block["type"] != "actions":
+                    new_blocks.append(block)
+            try:
+                # logger.warning(json.dumps(message, indent=4))
+                response = self.client.chat_update(
+                    channel=self.details["channel"]["id"],
+                    ts=self.details["message"]["ts"],
+                    text="Ban has been removed",
+                    blocks=new_blocks,
+                )
+                assert response["message"]
+                return response["ts"]
+            except SlackApiError as e:
+                # You will get a SlackApiError if "ok" is False
+                assert e.response["ok"] is False
+                assert e.response[
+                    "error"
+                ]  # str like 'invalid_auth', 'channel_not_found'
+                self.logger.warning(f"Got an error: {e.response['error']}")
+                self.logger.warning(json.dumps(self.details, indent=4))
+
+    def process_attack_message(self):
         if self.details["action"] == "ban" or self.details["action"] == "partial_block":
             attack_description = (
                 "*RTBH IP {ip_address}*: {attack_protocol} "
@@ -193,6 +227,20 @@ class SlackAction:
                     "text": {"type": "mrkdwn", "text": attack_description},
                 },
                 {"type": "divider"},
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Violation reason is {violation} in {direction} direction".format(
+                            violation=self.details["attack_details"][
+                                "attack_detection_threshold"
+                            ],
+                            direction=self.details["attack_details"][
+                                "attack_direction"
+                            ],
+                        ),
+                    },
+                },
             ]
 
             attack_data = self._get_attack_details()
@@ -211,12 +259,30 @@ class SlackAction:
                 "fallback": "Packets in the capture",
             }
 
+            actions = [
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Remove block :lock:",
+                                "emoji": True,
+                            },
+                            "value": self.details["attack_details"]["attack_uuid"],
+                        },
+                    ],
+                }
+            ]
+
             message = self._get_message_payload(
                 message=attack_summary_block,
                 attack_details=attack_data,
                 packet_details=packet_details,
                 mitigation_rules=flowspec_attachments,
                 fallback_message=attack_description,
+                actions=actions,
             )
             message_thread = self._notify(message)
             self.redis.set(
@@ -229,6 +295,9 @@ class SlackAction:
             if message_thread is not None:
                 message_thread = message_thread.decode("utf-8")
             tz = timezone(os.getenv("TIMEZONE", "Australia/Sydney"))
+            action_time = (
+                datetime.utcnow().replace(tzinfo=timezone("utc")).astimezone(tz=tz)
+            )
             action_description = [
                 {
                     "type": "section",
@@ -236,9 +305,7 @@ class SlackAction:
                         "type": "mrkdwn",
                         "text": "*Ban removed* for {ip_address} at {datetime}".format(
                             ip_address=self.details["ip"],
-                            datetime=tz.localize(datetime.now()).strftime(
-                                "%a %b %d %H:%M:%S %Z %Y"
-                            ),
+                            datetime=action_time.strftime("%a %b %d %H:%M:%S %Z %Y"),
                         ),
                     },
                 }

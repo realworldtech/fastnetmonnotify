@@ -1,14 +1,29 @@
 #!/usb/bin/python
 
+# really basic runner that stops messages being posted
+# more than once per second as per rate limits
+# Really, this hsould live in Celery or something better
+
 from fastnetmon_notify import redis
 from slack import SlackAction
 import time
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     while True:
-        (queue, attack) = redis.blpop("slack_attack_action")
-        attack_details = json.loads(attack.decode("utf-8"))
-        sa = SlackAction(attack_details=attack_details, redis=redis)
-        sa.process_message()
+        (queue, message) = redis.blpop(
+            ["slack_attack_action", "slack_update_blackhole"]
+        )
+        message = json.loads(message.decode("utf-8"))
+        if queue == b"slack_attack_action":
+            sa = SlackAction(attack_details=message, redis=redis)
+            sa.process_message()
+            sa = None
+        elif queue == b"slack_update_blackhole":
+            sa = SlackAction(update_message=message, redis=redis)
+            sa.process_message()
+            sa = None
         time.sleep(1)

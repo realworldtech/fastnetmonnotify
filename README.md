@@ -33,6 +33,23 @@ You'll probably want a channel to post into, e.g. #ddos-notifications
 
 Start your environment with a docker-compose up -d
 
+## Removing Blocks
+
+The interaction includes an implementation to remove blocks. This requires your
+notify server to be accessible from the internet. You will need to configure the
+SLACK_SIGNING_SECRET and the callback URL in the Slack Application.
+
+Docker will run your server in a "virtual network" and if you are running docker
+locally and limiting your API access via iptables you will need to ensure your Docker
+service can reach your API server.
+
+Slack allows approx 3 seconds for the server to respond to the API, so if it times out
+you will just see a warning icon.
+
+Note: this only really works for RTBH blackholes at present. Because the FNM API
+doesn't seem to include the flowspec rules in the resposne, you can't remove these.
+Also, flowspec rule removal doesn't seem to generate a notify event.
+
 ## Enabling in FastNetMon
 
 Put incoming_notify.py on your server and install python-requests using your
