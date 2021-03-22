@@ -97,7 +97,7 @@ class SlackAction:
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append(
-                "*{field}:* {value}".format(field=field, value=value)
+                "**{field}:** {value}".format(field=field, value=value)
             )
         return "\n".join(attack_summary_fields)
 
@@ -110,7 +110,7 @@ class SlackAction:
             if value == "":
                 value = "<not set>"
             flowspec_details.append(
-                "*{field}:* {value}".format(field=field, value=value)
+                "**{field}:** {value}".format(field=field, value=value)
             )
         return "\n".join(flowspec_details)
 
@@ -226,6 +226,18 @@ class SlackAction:
                 {
                     "type": "section",
                     "text": {"type": "mrkdwn", "text": attack_description},
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Violation reason is {attack_detection_threshold} in {direction} direction".format(
+                            attack_type=self.details["attack_details"]["attack_type"],
+                            direction=self.details["attack_details"][
+                                "attack_direction"
+                            ],
+                        ),
+                    },
                 },
                 {"type": "divider"},
             ]
