@@ -87,8 +87,10 @@ class SlackAction:
             self.logger.warning(json.dumps(message, indent=4))
 
     def _build_attack_details_table(self):
+        dataset = self.details["attack_details"]
         attack_summary_fields = []
-        for field in sorted(self.details["attack_details"].items()):
+        sorted_fields = {k: dataset[k] for k in sorted(dataset)}
+        for field in sorted_fields:
             if "traffic" in field:
                 raw_value = self.details["attack_details"][field]
                 value = humanfriendly.format_size(raw_value, binary=True)
