@@ -88,13 +88,14 @@ class SlackAction:
 
     def _build_attack_details_table(self):
         dataset = self.details["attack_details"]
+        dataset = dict(sorted(dataset.items()))
         attack_summary_fields = []
-        sorted_fields = {k: dataset[k] for k in sorted(dataset)}
-        for field, raw_value in sorted_fields:
+        for field in dataset:
             if "traffic" in field:
+                raw_value = self.details["attack_details"][field]
                 value = humanfriendly.format_size(raw_value, binary=True)
             else:
-                value = str(raw_value)
+                value = str(self.details["attack_details"][field])
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append(
