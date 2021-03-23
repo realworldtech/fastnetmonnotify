@@ -69,7 +69,10 @@ class SlackAction:
             del message["attachments"]
             response = self.client.chat_postMessage(**message)
             assert response["message"]
-            message_thread_id = response["ts"]
+            if message["thread_ts"] is None:
+                message_thread_id = response["ts"]
+            else:
+                message_thread_id = message["thread_ts"]
             time.sleep(1)
             del message["blocks"]
             for attachment in attachments:
@@ -185,7 +188,12 @@ class SlackAction:
                 attack_type=self.details["attack_details"]["attack_type"],
             )
             flowspec_attachments = None
+            redis_key = self.details["attack_details"]["attack_uuid"]
             if self.details["action"] == "partial_block":
+                redis_key = "fs-{attack_direction}-{ip_address}".format(
+                    attack_direction=self.details["attack_details"]["attack_direction"],
+                    ip_address=self.details["ip"],
+                )
                 attack_description = (
                     "*Flow Mitigation for IP {ip_address}*: {attack_protocol} "
                     + "{attack_direction} with {attack_severity} severity {attack_type} "
@@ -276,6 +284,11 @@ class SlackAction:
                 }
             ]
 
+            message_thread = self.redis.get(redis_key)
+            if message_thread is not None:
+                message_thread = message_thread.decode("utf-8")
+                actions = None
+
             message = self._get_message_payload(
                 message=attack_summary_block,
                 attack_details=attack_data,
@@ -283,11 +296,13 @@ class SlackAction:
                 mitigation_rules=flowspec_attachments,
                 fallback_message=attack_description,
                 actions=actions,
+                thread_ts=message_thread,
             )
+
             message_thread = self._notify(message)
-            self.redis.set(
-                self.details["attack_details"]["attack_uuid"], message_thread
-            )
+            self.redis.set(redis_key, message_thread)
+            if self.details["action"] == "partial_block":
+                self.redis.expire(redis_key, 1800)
 
         elif self.details["action"] == "unban":
             ban_id = self.details["attack_details"]["attack_uuid"]
