@@ -7,7 +7,18 @@ import sys
 import logging
 import json
 import time
-import humanfriendly
+
+
+def format_bps(val):
+    num = val
+    depths = ["bps", "Kbps", "Mbps", "Gbps", "Tbps"]
+    depth = 0
+    while depth < len(depths):
+        if num / 1024.0 < 1:
+            return "{:.3f} {}".format(num, depths[depth])
+        num = num / 1024.0
+        depth = depth + 1
+    return "{:.3f} {}".format(num, depths[depth - 1])
 
 
 class SlackAction:
@@ -96,7 +107,7 @@ class SlackAction:
         for field in dataset:
             if "traffic" in field:
                 raw_value = self.details["attack_details"][field]
-                value = humanfriendly.format_size(raw_value, binary=True)
+                value = format_bps(raw_value)
             else:
                 value = str(self.details["attack_details"][field])
             if value == "":
