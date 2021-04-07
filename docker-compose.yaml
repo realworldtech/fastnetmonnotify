@@ -19,3 +19,4 @@ services:
     restart: always
   redis:
     image: redis:6-alpine
+    restart: always
