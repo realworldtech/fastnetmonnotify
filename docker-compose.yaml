@@ -18,3 +18,4 @@ services:
       - redis
   redis:
     image: redis:7-alpine
+    restart: always
