@@ -4,11 +4,8 @@
 # FastNetMon notification relay script.
 # Reads attack JSON from stdin and POSTs it to the notification service.
 #
-# Required environment variables:
-#   NOTIFY_API_USER     - HTTP Basic Auth username for the notification service
-#   NOTIFY_API_PASSWORD - HTTP Basic Auth password for the notification service
-#   NOTIFY_API_URL      - (optional) URL of the notification service
-#                         default: http://localhost:8090/receive_message
+# Reads config from .env file in the same directory as this script,
+# falling back to environment variables, then defaults.
 #
 # For FastNetMon v2.0.368+, configure with:
 #   sudo fcli set main notify_script_enabled enable
@@ -27,6 +24,16 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
     level=logging.DEBUG,
 )
+
+# Load .env file from the same directory as this script
+_env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(_env_file):
+    with open(_env_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
 
 NOTIFY_API_USER = os.environ.get("NOTIFY_API_USER", "admin")
 NOTIFY_API_PASSWORD = os.environ.get("NOTIFY_API_PASSWORD", "__changeme__")
