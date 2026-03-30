@@ -12,14 +12,14 @@ class TestSlackActionBan:
         """Ban message should describe the attack using new field names."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         blocks = call_args["blocks"]
         summary_text = blocks[0]["text"]["text"]
         assert "127.0.0.1" in summary_text
@@ -29,14 +29,14 @@ class TestSlackActionBan:
         """Ban message should include attack_detection_threshold as violation reason."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         blocks = call_args["blocks"]
         violation_text = blocks[2]["text"]["text"]
         assert "pps" in violation_text
@@ -46,14 +46,14 @@ class TestSlackActionBan:
         """Ban message should have a remove button with the attack UUID."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         blocks = call_args["blocks"]
         action_block = [b for b in blocks if b.get("type") == "actions"]
         assert len(action_block) == 1
@@ -63,14 +63,14 @@ class TestSlackActionBan:
         """Attack details attachment should format traffic counters."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         attachments = call_args["attachments"]
         assert len(attachments) >= 1
 
@@ -82,14 +82,14 @@ class TestSlackActionFlowspec:
         """Flowspec message should describe the attack using new field names."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "partial_block", "ip_address": "127.0.0.1", "details": flowspec_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         blocks = call_args["blocks"]
         summary_text = blocks[0]["text"]["text"]
         assert "127.0.0.1" in summary_text
@@ -99,14 +99,14 @@ class TestSlackActionFlowspec:
         """Flowspec message should include rule details in attachments."""
         from slack import SlackAction
 
-        with patch.object(SlackAction, "_notify", return_value="1234567890.123456"):
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "partial_block", "ip_address": "127.0.0.1", "details": flowspec_payload},
                 redis=mock_redis,
             )
             sa.process_attack_message()
 
-        call_args = sa._notify.call_args[0][0]
+        call_args = mock_notify.call_args[0][0]
         attachments = call_args["attachments"]
         assert len(attachments) >= 2  # attack details + at least one flowspec rule
 

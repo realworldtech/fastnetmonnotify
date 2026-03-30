@@ -105,11 +105,13 @@ class SlackAction:
         dataset = dict(sorted(dataset.items()))
         attack_summary_fields = []
         for field in dataset:
-            if "traffic" in field:
-                raw_value = self.details["attack_details"][field]
+            raw_value = dataset[field]
+            if "traffic" in field and isinstance(raw_value, (int, float)):
                 value = format_bps(raw_value)
+            elif isinstance(raw_value, (list, dict)):
+                continue
             else:
-                value = str(self.details["attack_details"][field])
+                value = str(raw_value)
             if value == "":
                 value = "<not set>"
             attack_summary_fields.append(
@@ -187,37 +189,40 @@ class SlackAction:
 
     def process_attack_message(self):
         if self.details["action"] == "ban" or self.details["action"] == "partial_block":
-            attack_description = (
-                "*RTBH IP {ip_address}*: {attack_protocol} "
-                + "{attack_direction} with {attack_severity} severity {attack_type} "
-                + "attack"
-            ).format(
-                ip_address=self.details["ip"],
-                attack_protocol=self.details["attack_details"]["attack_protocol"],
-                attack_direction=self.details["attack_details"]["attack_direction"],
-                attack_severity=self.details["attack_details"]["attack_severity"],
-                attack_type=self.details["attack_details"]["attack_type"],
+            attack_details = self.details["attack_details"]
+            direction = attack_details.get(
+                "attack_detection_threshold_direction", "unknown"
             )
-            flowspec_attachments = None
-            redis_key = self.details["attack_details"]["attack_uuid"]
-            if self.details["action"] == "partial_block":
-                redis_key = "fs-{attack_direction}-{ip_address}".format(
-                    attack_direction=self.details["attack_details"]["attack_direction"],
-                    ip_address=self.details["ip"],
-                )
+            severity = attack_details.get("attack_severity", "unknown")
+            threshold = attack_details.get("attack_detection_threshold", "unknown")
+
+            if self.details["action"] == "ban":
                 attack_description = (
-                    "*Flow Mitigation for IP {ip_address}*: {attack_protocol} "
-                    + "{attack_direction} with {attack_severity} severity {attack_type} "
-                    + "attack"
+                    "*RTBH IP {ip_address}*: {direction} with {severity} severity attack"
                 ).format(
                     ip_address=self.details["ip"],
-                    attack_protocol=self.details["attack_details"]["attack_protocol"],
-                    attack_direction=self.details["attack_details"]["attack_direction"],
-                    attack_severity=self.details["attack_details"]["attack_severity"],
-                    attack_type=self.details["attack_details"]["attack_type"],
+                    direction=direction,
+                    severity=severity,
+                )
+            else:
+                attack_description = (
+                    "*Flow Mitigation for IP {ip_address}*: {direction} "
+                    "with {severity} severity attack"
+                ).format(
+                    ip_address=self.details["ip"],
+                    direction=direction,
+                    severity=severity,
+                )
+
+            flowspec_attachments = None
+            redis_key = attack_details["attack_uuid"]
+            if self.details["action"] == "partial_block":
+                redis_key = "fs-{direction}-{ip_address}".format(
+                    direction=direction,
+                    ip_address=self.details["ip"],
                 )
                 flowspec_attachments = []
-                for rule in self.details["flow_spec_rules"]:
+                for rule in self.details.get("flow_spec_rules", []):
                     flowspec_details = {
                         "blocks": [
                             {
@@ -234,6 +239,7 @@ class SlackAction:
                         "blocks"
                     ] + self._get_flowspec_blocks(rule)
                     flowspec_attachments.append(flowspec_details)
+
             packet_capture_details = "Not available"
             if "packet_dump" in self.details:
                 packet_capture_details = "```{packet_details}```".format(
@@ -250,13 +256,9 @@ class SlackAction:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "Violation reason is {violation} in {direction} direction".format(
-                            violation=self.details["attack_details"][
-                                "attack_detection_threshold"
-                            ],
-                            direction=self.details["attack_details"][
-                                "attack_direction"
-                            ],
+                        "text": "Violation reason is {threshold} in {direction} direction".format(
+                            threshold=threshold,
+                            direction=direction,
                         ),
                     },
                 },
@@ -289,7 +291,7 @@ class SlackAction:
                                 "text": "Remove block :lock:",
                                 "emoji": True,
                             },
-                            "value": self.details["attack_details"]["attack_uuid"],
+                            "value": attack_details["attack_uuid"],
                         },
                     ],
                 }
@@ -343,7 +345,7 @@ class SlackAction:
             )
             self._notify(message)
         else:
-            self.logger.warn(
+            self.logger.warning(
                 "Data for unknown action type {action}".format(
                     action=self.details["action"]
                 )
