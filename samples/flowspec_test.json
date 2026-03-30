@@ -1,27 +1,28 @@
 {
   "ip": "127.0.0.1",
   "action": "partial_block",
+  "alert_scope": "host",
+  "hostgroup_name": "",
+  "parent_hostgroup_name": "",
+  "hostgroup_networks": [],
   "attack_details": {
     "attack_uuid": "ac6f8000-1b17-43b8-9324-f8f7527bd948",
     "attack_severity": "middle",
-    "attack_type": "unknown",
-    "initial_attack_power": 266676,
-    "peak_attack_power": 266676,
-    "attack_direction": "incoming",
-    "attack_protocol": "tcp",
+    "host_group": "global",
+    "parent_host_group": "",
+    "host_network": "127.0.0.0/24",
+    "protocol_version": "ipv4",
+    "attack_detection_threshold": "pps",
+    "attack_detection_threshold_direction": "incoming",
     "attack_detection_source": "automatic",
+    "attack_detection_triggered_by_flexible_threshold": false,
+    "attack_detection_flexible_thresholds": [],
     "total_incoming_traffic": 14400545,
     "total_outgoing_traffic": 14400485,
     "total_incoming_pps": 266676,
     "total_outgoing_pps": 266675,
     "total_incoming_flows": 0,
     "total_outgoing_flows": 0,
-    "average_incoming_traffic": 14400545,
-    "average_outgoing_traffic": 14400485,
-    "average_incoming_pps": 266676,
-    "average_outgoing_pps": 266675,
-    "average_incoming_flows": 0,
-    "average_outgoing_flows": 0,
     "incoming_ip_fragmented_traffic": 0,
     "outgoing_ip_fragmented_traffic": 0,
     "incoming_ip_fragmented_pps": 0,
@@ -47,18 +48,10 @@
     {
       "source_prefix": "127.11.0.3/32",
       "destination_prefix": "127.0.0.1/32",
-      "destination_ports": [
-        0
-      ],
-      "packet_lengths": [
-        40
-      ],
-      "protocols": [
-        "tcp"
-      ],
-      "tcp_flags": [
-        "ack"
-      ],
+      "destination_ports": [0],
+      "packet_lengths": [40],
+      "protocols": ["tcp"],
+      "tcp_flags": ["ack"],
       "action_type": "discard",
       "action": {}
     }
