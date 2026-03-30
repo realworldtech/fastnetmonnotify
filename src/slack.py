@@ -3,7 +3,6 @@ from slack_sdk.errors import SlackApiError
 from datetime import datetime
 from pytz import timezone
 import os
-import sys
 import logging
 import json
 import time
@@ -232,12 +231,6 @@ class SlackAction:
                     ] + self._get_flowspec_blocks(rule)
                     flowspec_attachments.append(flowspec_details)
 
-            packet_capture_details = "Not available"
-            if "packet_dump" in self.details:
-                packet_capture_details = "```{packet_details}```".format(
-                    packet_details="\n".join(self.details["packet_dump"])
-                )
-
             attack_summary_block = [
                 {
                     "type": "section",
@@ -257,20 +250,6 @@ class SlackAction:
             ]
 
             attack_data = self._get_attack_details()
-
-            packet_details = {
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {"type": "mrkdwn", "text": "*Packet Capture Sample*"},
-                    },
-                    {
-                        "type": "section",
-                        "text": {"type": "mrkdwn", "text": packet_capture_details},
-                    },
-                ],
-                "fallback": "Packets in the capture",
-            }
 
             actions = [
                 {
@@ -297,7 +276,6 @@ class SlackAction:
             message = self._get_message_payload(
                 message=attack_summary_block,
                 attack_details=attack_data,
-                packet_details=packet_details,
                 mitigation_rules=flowspec_attachments,
                 fallback_message=attack_description,
                 actions=actions,
@@ -310,9 +288,21 @@ class SlackAction:
                 if self.details["action"] == "partial_block":
                     self.redis.expire(redis_key, 1800)
 
-        elif self.details["action"] == "unban":
-            ban_id = self.details["attack_details"]["attack_uuid"]
-            message_thread = self.redis.get(ban_id)
+        elif self.details["action"] in ("unban", "partial_unblock"):
+            attack_details = self.details["attack_details"]
+            if self.details["action"] == "unban":
+                redis_key = attack_details["attack_uuid"]
+                label = "Ban removed"
+            else:
+                direction = attack_details.get(
+                    "attack_detection_threshold_direction", "unknown"
+                )
+                redis_key = "fs-{direction}-{ip_address}".format(
+                    direction=direction,
+                    ip_address=self.details["ip"],
+                )
+                label = "Flow mitigation removed"
+            message_thread = self.redis.get(redis_key)
             if message_thread is not None:
                 message_thread = message_thread.decode("utf-8")
             tz = timezone(os.getenv("TIMEZONE", "Australia/Sydney"))
@@ -324,7 +314,8 @@ class SlackAction:
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*Ban removed* for {ip_address} at {datetime}".format(
+                        "text": "*{label}* for {ip_address} at {datetime}".format(
+                            label=label,
                             ip_address=self.details["ip"],
                             datetime=action_time.strftime("%a %b %d %H:%M:%S %Z %Y"),
                         ),
@@ -334,7 +325,7 @@ class SlackAction:
             message = self._get_message_payload(
                 message=action_description,
                 thread_ts=message_thread,
-                fallback_message="Ban removed",
+                fallback_message=label,
             )
             self._notify(message)
         else:

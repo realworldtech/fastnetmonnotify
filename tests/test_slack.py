@@ -115,6 +115,22 @@ class TestSlackActionUnban:
         assert "127.0.0.1" in text
         assert "Ban removed" in text
 
+    def test_process_partial_unblock_includes_ip(self, flowspec_payload, mock_redis):
+        """Partial unblock message should include the IP and correct label."""
+        flowspec_payload["action"] = "partial_unblock"
+        with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
+            sa = SlackAction(
+                attack_details={"action": "partial_unblock", "ip_address": "127.0.0.1", "details": flowspec_payload},
+                redis=mock_redis,
+            )
+            sa.process_attack_message()
+
+        call_args = mock_notify.call_args[0][0]
+        blocks = call_args["blocks"]
+        text = blocks[0]["text"]["text"]
+        assert "127.0.0.1" in text
+        assert "Flow mitigation removed" in text
+
 
 class TestFormatBps:
     """Test bandwidth formatting helper."""
