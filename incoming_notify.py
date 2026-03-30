@@ -28,15 +28,9 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-NOTIFY_API_USER = os.environ.get("NOTIFY_API_USER")
-NOTIFY_API_PASSWORD = os.environ.get("NOTIFY_API_PASSWORD")
+NOTIFY_API_USER = os.environ.get("NOTIFY_API_USER", "admin")
+NOTIFY_API_PASSWORD = os.environ.get("NOTIFY_API_PASSWORD", "__changeme__")
 NOTIFY_API_URL = os.environ.get("NOTIFY_API_URL", "http://localhost:8090/receive_message")
-
-if not NOTIFY_API_USER or not NOTIFY_API_PASSWORD:
-    logging.error(
-        "NOTIFY_API_USER and NOTIFY_API_PASSWORD environment variables must be set"
-    )
-    sys.exit(1)
 
 stdin_data = sys.stdin.read()
 
