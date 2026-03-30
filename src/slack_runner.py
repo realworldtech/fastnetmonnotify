@@ -1,4 +1,4 @@
-#!/usb/bin/python
+#!/usr/bin/env python3
 
 # really basic runner that stops messages being posted
 # more than once per second as per rate limits
