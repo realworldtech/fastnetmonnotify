@@ -3,6 +3,12 @@ import os
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def slack_env_vars(monkeypatch):
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test-token")
+    monkeypatch.setenv("SLACK_BOT_CHANNEL", "C0TEST12345")
+
+
 @pytest.fixture
 def ban_payload():
     with open(os.path.join(os.path.dirname(__file__), "..", "samples", "test_data.json")) as f:
