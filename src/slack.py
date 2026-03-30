@@ -75,7 +75,6 @@ class SlackAction:
 
     def _notify(self, message):
         try:
-            # logger.warning(json.dumps(message, indent=4))
             attachments = message["attachments"]
             del message["attachments"]
             response = self.client.chat_postMessage(**message)
@@ -102,10 +101,8 @@ class SlackAction:
 
     def _build_attack_details_table(self):
         dataset = self.details["attack_details"]
-        dataset = dict(sorted(dataset.items()))
         attack_summary_fields = []
-        for field in dataset:
-            raw_value = dataset[field]
+        for field, raw_value in sorted(dataset.items()):
             if "traffic" in field and isinstance(raw_value, (int, float)):
                 value = format_bps(raw_value)
             elif isinstance(raw_value, (list, dict)):
@@ -169,7 +166,6 @@ class SlackAction:
                 if block["type"] != "actions":
                     new_blocks.append(block)
             try:
-                # logger.warning(json.dumps(message, indent=4))
                 response = self.client.chat_update(
                     channel=self.details["channel"]["id"],
                     ts=self.details["message"]["ts"],
@@ -197,22 +193,18 @@ class SlackAction:
             threshold = attack_details.get("attack_detection_threshold", "unknown")
 
             if self.details["action"] == "ban":
-                attack_description = (
-                    "*RTBH IP {ip_address}*: {direction} with {severity} severity attack"
-                ).format(
-                    ip_address=self.details["ip"],
-                    direction=direction,
-                    severity=severity,
-                )
+                label = "RTBH IP"
             else:
-                attack_description = (
-                    "*Flow Mitigation for IP {ip_address}*: {direction} "
-                    "with {severity} severity attack"
-                ).format(
-                    ip_address=self.details["ip"],
-                    direction=direction,
-                    severity=severity,
-                )
+                label = "Flow Mitigation for IP"
+            attack_description = (
+                "*{label} {ip_address}*: {direction} "
+                "with {severity} severity attack"
+            ).format(
+                label=label,
+                ip_address=self.details["ip"],
+                direction=direction,
+                severity=severity,
+            )
 
             flowspec_attachments = None
             redis_key = attack_details["attack_uuid"]
@@ -313,9 +305,10 @@ class SlackAction:
             )
 
             message_thread = self._notify(message)
-            self.redis.set(redis_key, message_thread)
-            if self.details["action"] == "partial_block":
-                self.redis.expire(redis_key, 1800)
+            if message_thread is not None:
+                self.redis.set(redis_key, message_thread)
+                if self.details["action"] == "partial_block":
+                    self.redis.expire(redis_key, 1800)
 
         elif self.details["action"] == "unban":
             ban_id = self.details["attack_details"]["attack_uuid"]

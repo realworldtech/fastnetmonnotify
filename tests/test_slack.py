@@ -1,8 +1,6 @@
-import json
-import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
+from slack import SlackAction, format_bps
 
 
 class TestSlackActionBan:
@@ -10,8 +8,6 @@ class TestSlackActionBan:
 
     def test_process_ban_builds_attack_description(self, ban_payload, mock_redis):
         """Ban message should describe the attack using new field names."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
@@ -27,8 +23,6 @@ class TestSlackActionBan:
 
     def test_process_ban_includes_violation_reason(self, ban_payload, mock_redis):
         """Ban message should include attack_detection_threshold as violation reason."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
@@ -44,8 +38,6 @@ class TestSlackActionBan:
 
     def test_process_ban_includes_attack_uuid_in_action(self, ban_payload, mock_redis):
         """Ban message should have a remove button with the attack UUID."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
@@ -61,8 +53,6 @@ class TestSlackActionBan:
 
     def test_process_ban_attack_details_table(self, ban_payload, mock_redis):
         """Attack details attachment should format traffic counters."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "ban", "ip_address": "127.0.0.1", "details": ban_payload},
@@ -80,8 +70,6 @@ class TestSlackActionFlowspec:
 
     def test_process_partial_block_builds_description(self, flowspec_payload, mock_redis):
         """Flowspec message should describe the attack using new field names."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "partial_block", "ip_address": "127.0.0.1", "details": flowspec_payload},
@@ -97,8 +85,6 @@ class TestSlackActionFlowspec:
 
     def test_process_partial_block_includes_flowspec_rules(self, flowspec_payload, mock_redis):
         """Flowspec message should include rule details in attachments."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "partial_block", "ip_address": "127.0.0.1", "details": flowspec_payload},
@@ -116,8 +102,6 @@ class TestSlackActionUnban:
 
     def test_process_unban_includes_ip(self, unban_payload, mock_redis):
         """Unban message should include the IP address."""
-        from slack import SlackAction
-
         with patch.object(SlackAction, "_notify", return_value="1234567890.123456") as mock_notify:
             sa = SlackAction(
                 attack_details={"action": "unban", "ip_address": "127.0.0.1", "details": unban_payload},
@@ -136,24 +120,16 @@ class TestFormatBps:
     """Test bandwidth formatting helper."""
 
     def test_format_bps_small(self):
-        from slack import format_bps
-
         assert format_bps(500) == "500.000 bps"
 
     def test_format_bps_kbps(self):
-        from slack import format_bps
-
         result = format_bps(2048)
         assert "Kbps" in result
 
     def test_format_bps_mbps(self):
-        from slack import format_bps
-
         result = format_bps(2048 * 1024)
         assert "Mbps" in result
 
     def test_format_bps_gbps(self):
-        from slack import format_bps
-
         result = format_bps(2048 * 1024 * 1024)
         assert "Gbps" in result

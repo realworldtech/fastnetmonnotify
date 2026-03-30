@@ -46,20 +46,19 @@ def verify_password(username, password):
 @app.route("/receive_message", methods=["POST"])
 @auth.login_required
 def receive_message():
-    if request.method == "POST":
-        content = request.get_json()
-        alert_scope = content.get("alert_scope", "host")
-        if alert_scope == "hostgroup":
-            identifier = content.get("hostgroup_name", "unknown")
-        else:
-            identifier = content.get("ip", "unknown")
-        attack_details = {
-            "action": content["action"],
-            "ip_address": identifier,
-            "details": content,
-        }
-        message = json.dumps(attack_details)
-        app.redis.rpush("slack_attack_action", message)
+    content = request.get_json()
+    alert_scope = content.get("alert_scope", "host")
+    if alert_scope == "hostgroup":
+        identifier = content.get("hostgroup_name", "unknown")
+    else:
+        identifier = content.get("ip", "unknown")
+    attack_details = {
+        "action": content["action"],
+        "ip_address": identifier,
+        "details": content,
+    }
+    message = json.dumps(attack_details)
+    app.redis.rpush("slack_attack_action", message)
     return "Success"
 
 

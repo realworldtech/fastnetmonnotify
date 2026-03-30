@@ -38,4 +38,4 @@ action = data.get("action", "unknown")
 ip_address = data.get("ip", "unknown")
 logging.info("Received %s callback for %s", action, ip_address)
 
-requests.post(url, json=data, auth=(NOTIFY_API_USER, NOTIFY_API_PASSWORD))
+requests.post(url, json=data, auth=(NOTIFY_API_USER, NOTIFY_API_PASSWORD), timeout=10)

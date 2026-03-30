@@ -1,7 +1,7 @@
 import json
 import os
 from base64 import b64encode
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
