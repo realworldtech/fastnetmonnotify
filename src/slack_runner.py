@@ -21,9 +21,7 @@ if __name__ == "__main__":
         if queue == b"slack_attack_action":
             sa = SlackAction(attack_details=message, redis=redis)
             sa.process_message()
-            sa = None
         elif queue == b"slack_update_blackhole":
             sa = SlackAction(update_message=message, redis=redis)
             sa.process_message()
-            sa = None
         time.sleep(1)

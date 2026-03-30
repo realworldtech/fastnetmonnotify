@@ -77,7 +77,6 @@ class SlackAction:
             attachments = message["attachments"]
             del message["attachments"]
             response = self.client.chat_postMessage(**message)
-            assert response["message"]
             if message["thread_ts"] is None:
                 message_thread_id = response["ts"]
             else:
@@ -87,14 +86,10 @@ class SlackAction:
             for attachment in attachments:
                 message["attachments"] = [attachment]
                 message["thread_ts"] = message_thread_id
-                response = self.client.chat_postMessage(**message)
-                assert response["message"]
+                self.client.chat_postMessage(**message)
                 time.sleep(1)
             return message_thread_id
         except SlackApiError as e:
-            # You will get a SlackApiError if "ok" is False
-            assert e.response["ok"] is False
-            assert e.response["error"]  # str like 'invalid_auth', 'channel_not_found'
             self.logger.warning(f"Got an error: {e.response['error']}")
             self.logger.warning(json.dumps(message, indent=4))
 
@@ -171,14 +166,8 @@ class SlackAction:
                     text="Ban has been removed",
                     blocks=new_blocks,
                 )
-                assert response["message"]
                 return response["ts"]
             except SlackApiError as e:
-                # You will get a SlackApiError if "ok" is False
-                assert e.response["ok"] is False
-                assert e.response[
-                    "error"
-                ]  # str like 'invalid_auth', 'channel_not_found'
                 self.logger.warning(f"Got an error: {e.response['error']}")
                 self.logger.warning(json.dumps(self.details, indent=4))
 
@@ -307,7 +296,7 @@ class SlackAction:
                 message_thread = message_thread.decode("utf-8")
             tz = timezone(os.getenv("TIMEZONE", "Australia/Sydney"))
             action_time = (
-                datetime.utcnow().replace(tzinfo=timezone("utc")).astimezone(tz=tz)
+                datetime.now(timezone("utc")).astimezone(tz=tz)
             )
             action_description = [
                 {
