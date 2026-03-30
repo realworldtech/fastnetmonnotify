@@ -1,5 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # incoming_notify
+#
+# FastNetMon notification relay script.
+# Reads attack JSON from stdin and POSTs it to the notification service.
+#
+# For FastNetMon v2.0.368+, configure with:
+#   sudo fcli set main notify_script_enabled enable
+#   sudo fcli set main notify_script_format json
+#   sudo fcli set main notify_script_path /path/to/incoming_notify.py
+#   sudo fcli commit
 
 import json
 import sys
@@ -17,14 +26,16 @@ logging.basicConfig(
     level=logging.DEBUG,
 )
 
-if len(sys.argv) != 3:
-    logging.error("Please provide two arguments for script: action and IP address")
+stdin_data = sys.stdin.read()
+
+try:
+    data = json.loads(stdin_data)
+except json.JSONDecodeError:
+    logging.error("Failed to parse JSON from stdin")
     sys.exit(1)
 
-action = sys.argv[1]
-ip_address = sys.argv[2]
-
-stdin_data = sys.stdin.read()
-data = json.loads(stdin_data)
+action = data.get("action", "unknown")
+ip_address = data.get("ip", "unknown")
+logging.info("Received %s callback for %s", action, ip_address)
 
 requests.post(url, json=data, auth=(NOTIFY_API_USER, NOTIFY_API_PASSWORD))
